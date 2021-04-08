@@ -5,10 +5,8 @@
 .snakemake
 benchmarks
 calls
-dag
 data
 logs
 plots
-scripts
 sorted_reads
 *.tar.gz
