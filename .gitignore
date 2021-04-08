@@ -7,6 +7,5 @@ benchmarks
 calls
 data
 logs
-plots
 sorted_reads
 *.tar.gz
