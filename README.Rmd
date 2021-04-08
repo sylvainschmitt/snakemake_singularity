@@ -2,7 +2,9 @@
 title: "snakemake singularity"
 author: Sylvain Schmitt
 date: April 8, 2021
-output: github_document
+output:
+  github_document: 
+    toc: yes
 ---
 
 Test of the `snakemake` [tutorial]( https://snakemake.readthedocs.io/en/stable/tutorial/setup.html#running-the-tutorial-on-your-local-machine) on my local machine.

@@ -3,6 +3,39 @@ snakemake singularity
 Sylvain Schmitt
 April 8, 2021
 
+  - [Setup](#setup)
+      - [Requirements](#requirements)
+      - [Installing Mambaforge](#installing-mambaforge)
+      - [Preparing data](#preparing-data)
+      - [Creating an environment with the required
+        software](#creating-an-environment-with-the-required-software)
+      - [Activating the environment](#activating-the-environment)
+  - [Basics](#basics)
+      - [Mapping reads](#mapping-reads)
+      - [Generalizing the read mapping
+        rule](#generalizing-the-read-mapping-rule)
+      - [Sorting read alignments](#sorting-read-alignments)
+      - [Indexing read alignments and visualizing the DAG of
+        jobs](#indexing-read-alignments-and-visualizing-the-dag-of-jobs)
+      - [Calling genomic variants](#calling-genomic-variants)
+      - [Using custom scripts](#using-custom-scripts)
+      - [Adding a target rule](#adding-a-target-rule)
+  - [Advanced: Decorating the example
+    workflow](#advanced-decorating-the-example-workflow)
+      - [Specifying the number of used
+        threads](#specifying-the-number-of-used-threads)
+      - [Config files](#config-files)
+      - [Input functions](#input-functions)
+      - [Rule parameters](#rule-parameters)
+      - [Logging](#logging)
+      - [Temporary and protected files](#temporary-and-protected-files)
+      - [Benchmarking](#benchmarking)
+      - [Automatic deployment of software
+        dependencies](#automatic-deployment-of-software-dependencies)
+      - [Tool wrappers](#tool-wrappers)
+      - [Cluster](#cluster)
+      - [Constraining wildcards](#constraining-wildcards)
+
 Test of the `snakemake`
 [tutorial](https://snakemake.readthedocs.io/en/stable/tutorial/setup.html#running-the-tutorial-on-your-local-machine)
 on my local machine. **Next step is to combine it with `singularity` as
