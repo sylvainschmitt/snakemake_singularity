@@ -10,3 +10,4 @@ logs
 sorted_reads
 *.tar.gz
 *.def
+report.html

@@ -725,3 +725,8 @@ Write `cluster.json`:
 ```{bash, eval=F}
 sbatch job.sh
 ```
+
+# GitLab / GitHub
+
+Obviously, using a GitLab/GitHub project is recommended to track and exchange the pipeline.
+The `docker` and `singularity` images can be hosted on your account: https://souchal.pages.in2p3.fr/hugo-perso/2019/09/20/tutorial-singularity-and-docker/.
