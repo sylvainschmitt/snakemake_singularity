@@ -34,20 +34,45 @@ April 8, 2021
       - [Tool wrappers](#tool-wrappers)
       - [Constraining wildcards](#constraining-wildcards)
   - [Cluster](#cluster)
+      - [Job](#job)
+      - [Configuration](#configuration)
+      - [Run](#run)
 
-Test of the `snakemake`
+Test of the `snakemake` with `singularity` image
 [tutorial](https://snakemake.readthedocs.io/en/stable/tutorial/setup.html#running-the-tutorial-on-your-local-machine)
-on my local machine. **Next step is to combine it with `singularity` as
-[here](https://forgemia.inra.fr/umr-1202-biogeco/snakemake_singularity_hpc#test-example-).**
+on my local machine and on HPC
+([genotoul](http://bioinfo.genotoul.fr/)).
 
 # Summary
 
 *Everything is developed below.*
 
-1.  Get data `wget
-    https://github.com/snakemake/snakemake-tutorial-data/archive/v5.24.1.tar.gz`
-2.  Create a environment file
-    [`img/environment.yml`](img/environment.yml)
+1.  Data
+    1.  Get it `wget
+        https://github.com/snakemake/snakemake-tutorial-data/archive/v5.24.1.tar.gz`
+    2.  Uncompress `tar --wildcards -xf v5.24.1.tar.gz --strip 1
+        "*/data"`
+2.  Singularity
+    1.  Write an environment file
+        [`img/environment.yml`](https://github.com/sylvainschmitt/snakemake_singularity/blob/main/img/environment.yml)
+    2.  Write a singularity definition
+        [`img/sing.def`](https://github.com/sylvainschmitt/snakemake_singularity/blob/main/img/sing.def)
+    3.  build the image `sudo singularity build snakemake_tuto.sif
+        sing.def`
+3.  Snakemake
+    1.  Create a Snakefile workflow with the configuration
+        [`config.yml`](https://github.com/sylvainschmitt/snakemake_singularity/blob/main/config.yml)
+        and the pipeline
+        [`Snakefile`](https://github.com/sylvainschmitt/snakemake_singularity/blob/main/Snakefile)
+    2.  Add the needed scripts
+        [`scripts/plot_quals.py`](https://github.com/sylvainschmitt/snakemake_singularity/blob/main/scripts/plot_quals.py)
+    3.  *Run locally if not HPC `snakemake --use-singularity`*
+4.  HPC
+    1.  Create the script
+        [`job.sh`](https://github.com/sylvainschmitt/snakemake_singularity/blob/main/job.sh)
+    2.  Create the cluster config file
+        [`cluster.json`](https://github.com/sylvainschmitt/snakemake_singularity/blob/main/cluster.json)
+    3.  Run the job `sbatch job.sh`
 
 # Setup
 
@@ -658,5 +683,132 @@ Regular expressions can be used, *e.g.*:
 
 # Cluster
 
-[Newt version for
-genotoul](https://forgemia.inra.fr/umr-1202-biogeco/snakemake_singularity_hpc#bash)
+## Job
+
+Write `job.sh`:
+
+``` bash
+#!/bin/bash
+# Run snakemake with a singularity container
+## Sylvain SCHMITT
+## 25/02/2020
+
+#SBATCH -J snakemake
+#SBATCH --time=00:05:00
+#SBATCH -c 1
+#SBATCH --nodes=1
+#SBATCH --ntasks-per-node=1
+#SBATCH --mem 128000MB
+#SBATCH -o snakemake.%N.%j.out
+#SBATCH -e snakemake.%N.%j.err
+
+# Module
+module load snakemake
+
+# Configuration
+CLUSTER_CONFIG=cluster.json # Cluster config file with parameters for each rule of the Snakefile
+CLUSTER="sbatch --mem={cluster.mem} --ntasks-per-node {cluster.npernode} -t {cluster.time} -n {cluster.ntasks} -c {cluster.c} -J {cluster.jobname} -o snake_subjob_log/{cluster.jobname}.%N.%j.out -e snake_subjob_log/{cluster.jobname}.%N.%j.err"
+# Slurm command to launch each new jobs (aka rule) create by snakemake. 
+# Arguments values are parameters of the cluster config file.
+# Use at most N cores in parallel (default: 1). If N is omitted or 'all', the limit is set to the number of available cores.
+MAX_CORES=100
+
+# Preparation
+mkdir -p snake_subjob_log # Create a log directory for all the slurm output files
+snakemake -s Snakefile --dag | dot -Tpng > dag.png # Create the directive acyclic graph of the workflow
+
+# Run
+snakemake -s Snakefile --use-singularity -j $MAX_CORES --cluster-config $CLUSTER_CONFIG --cluster "$CLUSTER"
+## Launch the workflow : -s Snakefile --use-singularity launch the container 
+## --cluster-config cluster configuration file for each rule in the cluster --cluster sbacth shell command
+
+# Report 
+snakemake -s Snakefile --report report.html 
+
+## Informations
+echo '########################################'
+echo 'Date:' $(date --iso-8601=seconds)
+echo 'User:' $USER
+echo 'Host:' $HOSTNAME
+echo 'Job Name:' $SLURM_JOB_NAME
+echo 'Job ID:' $SLURM_JOB_ID
+echo 'Array task ID:' ${SLURM_ARRAY_TASK_ID}
+echo 'Number of nodes assigned to job:' $SLURM_JOB_NUM_NODES
+echo 'Total number of cores for job:' $SLURM_NTASKS
+echo 'Number of requested cores per node:' $SLURM_NTASKS_PER_NODE
+echo 'Nodes assigned to job:' $SLURM_JOB_NODELIST
+echo 'Directory:' $(pwd)
+## Detail Information:
+echo 'scontrol show job:'
+scontrol show job $SLURM_JOB_ID
+echo '########################################'
+```
+
+## Configuration
+
+Write `cluster.json`:
+
+``` bash
+{
+   "__default__" :
+   {
+       "jobname": "default",
+      "c" : 1,
+      "ntasks" : 1,
+      "npernode" : 1,
+       "mem": 4000,
+       "time": "00:02:00"
+    },
+   "bwa_map" :
+   {
+       "jobname": "bwa",
+      "c": 8,
+      "ntasks": 1,
+      "npernode" : 1,
+      "mem": 4000,
+      "time": "00:02:00"
+   },
+   "samtools_sort" : 
+   {
+      "jobname": "samsort",
+      "c": 1,
+      "ntasks": 1,
+      "npernode" : 1,
+      "mem": 4000,
+      "time": "00:02:00"
+   },
+   "samtools_index" : 
+   {
+       "jobname": "samidx",
+       "c": 1,
+       "ntasks": 1,
+       "npernode" : 1,
+       "mem": 4000,
+       "time": "00:02:00"
+   },
+   "bcftools_call" : 
+   {
+      "jobname": "bcfcall",
+      "c": 1,
+      "ntasks": 1,
+      "npernode" : 1,
+      "mem": 4000,
+      "time": "00:02:00"
+   },
+   "plot_quals" :
+   {
+      "jobname": "plot",
+      "c": 1,
+      "ntasks": 1,
+      "npernode" : 1,
+      "mem": 4000,
+      "time": "00:02:00"
+   }
+}
+```
+
+## Run
+
+``` bash
+sbatch job.sh
+```

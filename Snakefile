@@ -1,8 +1,8 @@
 ## Sylvain SCHMITT
 ## 06/04/2021
 
-configfile: "config.yaml"
-
+configfile: "config.yml"
+singularity: "img/snakemake_tuto.sif"
 
 rule all:
     input:
@@ -67,3 +67,4 @@ rule plot_quals:
         "plots/quals.svg"
     script:
         "scripts/plot-quals.py"
+        

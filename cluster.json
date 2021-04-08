@@ -1,0 +1,56 @@
+{
+   "__default__" :
+   {
+	   "jobname": "default",
+      "c" : 1,
+      "ntasks" : 1,
+      "npernode" : 1,
+	   "mem": 4000,
+	   "time": "00:02:00"
+    },
+   "bwa_map" :
+   {
+	   "jobname": "bwa",
+      "c": 8,
+      "ntasks": 1,
+      "npernode" : 1,
+      "mem": 4000,
+      "time": "00:02:00"
+   },
+   "samtools_sort" : 
+   {
+      "jobname": "samsort",
+      "c": 1,
+      "ntasks": 1,
+      "npernode" : 1,
+      "mem": 4000,
+      "time": "00:02:00"
+   },
+   "samtools_index" : 
+   {
+       "jobname": "samidx",
+       "c": 1,
+       "ntasks": 1,
+       "npernode" : 1,
+       "mem": 4000,
+       "time": "00:02:00"
+   },
+   "bcftools_call" : 
+   {
+      "jobname": "bcfcall",
+      "c": 1,
+      "ntasks": 1,
+      "npernode" : 1,
+      "mem": 4000,
+      "time": "00:02:00"
+   },
+   "plot_quals" :
+   {
+      "jobname": "plot",
+      "c": 1,
+      "ntasks": 1,
+      "npernode" : 1,
+      "mem": 4000,
+      "time": "00:02:00"
+   }
+}
