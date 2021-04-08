@@ -10,10 +10,18 @@ output:
 Test of the `snakemake` [tutorial]( https://snakemake.readthedocs.io/en/stable/tutorial/setup.html#running-the-tutorial-on-your-local-machine) on my local machine.
 **Next step is to combine it with `singularity` as [here](https://forgemia.inra.fr/umr-1202-biogeco/snakemake_singularity_hpc#test-example-).**
 
+# Summary
+
+*Everything is developed below.*
+
+1. Get data `wget https://github.com/snakemake/snakemake-tutorial-data/archive/v5.24.1.tar.gz`
+1. Create a environment file [`img/environment.yml`](img/environment.yml)
+
 # Setup
 
 ## Requirements
 
+* [x] [Singularity](https://github.com/hpcng/singularity/blob/master/INSTALL.md)
 * [x] Python ≥3.5 `sudo apt-get install python3.5`
 * [x] Snakemake ≥5.24.1 `sudo apt install snakemake`
 * [x] BWA 0.7 `sudo apt-get install bwa`
@@ -25,19 +33,20 @@ Test of the `snakemake` [tutorial]( https://snakemake.readthedocs.io/en/stable/t
 * [x] NetworkX 2.5 `pip install NetworkX`
 * [x] Matplotlib 3.3 `pip install Matplotlib`
 
-## Installing Mambaforge
+<!-- ## Installing Mambaforge -->
 
-```{bash, eval=F, echo=T}
-cd ~/Téléchargements
-wget https://github.com/conda-forge/miniforge/releases/latest/download/Mambaforge-Linux-x86_64.sh
-bash Mambaforge-Linux-x86_64.sh
-```
+<!-- ```{bash, eval=F, echo=T} -->
+<!-- cd ~/Téléchargements -->
+<!-- wget https://github.com/conda-forge/miniforge/releases/latest/download/Mambaforge-Linux-x86_64.sh -->
+<!-- bash Mambaforge-Linux-x86_64.sh -->
+<!-- ``` -->
 
-## Preparing data
+## Data
 
 ```{bash, eval=F, echo=T}
 wget https://github.com/snakemake/snakemake-tutorial-data/archive/v5.24.1.tar.gz
 tar --wildcards -xf v5.24.1.tar.gz --strip 1 "*/data" "*/environment.yaml"
+rm *.tar.gz*
 ```
 
 Vizualise obtained data.
@@ -45,39 +54,110 @@ Vizualise obtained data.
 ```{bash, comment=NA}
 tree data
 ```
-Visualize environment file.
 
-```{bash, comment=NA}
-less environment.yaml
+## Conda
+
+Write `img/environment.yml`:
+
+```{python, eval=F}
+rule bwa_map:
+    input:
+        "data/genome.fa",
+        "data/samples/A.fastq"
+    output:
+        "mapped_reads/A.bam"
+    shell:
+        "bwa mem {input} | samtools view -Sb - > {output}"
 ```
 
-## Creating an environment with the required software
-
-**Slow with bad internet connection!**
-
-```{bash, eval=F, echo=T}
-conda activate base
-mamba env create --name snakemake-tutorial --file environment.yaml
-```
-
-## Activating the environment
+test:
 
 ```{bash, eval=F}
-conda activate snakemake-tutorial
-snakemake --help
+conda env create -n myEnv -f environment.yml
+conda activate myEnv
+conda env list
 ```
 
-To stop it (not now):
+Useful commands list :
+
+* conda env create (with yml file)
+* conda activate
+* conda deactivate
+* conda remove --name myEnv --all (remove select environment)
+* conda create
+* conda list (package list)
+* conda env list (conda envs list)
+
+When envs are created they are automatically create in the folder /home/user/anaconda3/envs/ . You can change the path with the argument --prefix, it can be useful if you want to create an environment specific to a project.
+Useful links :
+https://docs.conda.io/projects/conda/en/latest/user-guide/tasks/manage-environments.html
+
+## Singularity container
+
+Write `img/sing.def`:
+
+```{python, eval=F}
+Bootstrap : docker
+From :  continuumio/miniconda3
+IncludeCmd : yes
+
+%files
+environment.yml
+
+%post
+apt-get update && apt-get install -y procps && apt-get clean -y
+/opt/conda/bin/conda env create -n myEnv -f /environment.yml 
+/opt/conda/bin/conda clean -a
+
+
+%environment
+export PATH=/opt/conda/bin:$PATH
+. /opt/conda/etc/profile.d/conda.sh
+conda activate myEnv
+
+%runscript
+echo "Hello World"
+
+%help
+Tools for Snakemake tutorial
+
+%labels
+Author Sylvain SCHMITT
+```
+
+build:
 
 ```{bash, eval=F}
-conda deactivate
+sudo singularity build snakemake_tuto.sif sing.def
 ```
+
+<!-- ## Creating an environment with the required software -->
+
+<!-- **Slow with bad internet connection!** -->
+
+<!-- ```{bash, eval=F, echo=T} -->
+<!-- conda activate base -->
+<!-- mamba env create --name snakemake-tutorial --file environment.yaml -->
+<!-- ``` -->
+
+<!-- ## Activating the environment -->
+
+<!-- ```{bash, eval=F} -->
+<!-- conda activate snakemake-tutorial -->
+<!-- snakemake --help -->
+<!-- ``` -->
+
+<!-- To stop it (not now): -->
+
+<!-- ```{bash, eval=F} -->
+<!-- conda deactivate -->
+<!-- ``` -->
 
 # Basics
 
 ## Mapping reads
 
-`Snakefile`:
+Write `Snakefile`:
 
 ```{python, eval=F}
 rule bwa_map:
@@ -498,10 +578,10 @@ rule bwa_mem:
       "0.15.3/bio/bwa/mem"
 ```
 
-## Cluster 
-
-[Newt version for genotoul](https://forgemia.inra.fr/umr-1202-biogeco/snakemake_singularity_hpc#bash)
-
 ## Constraining wildcards
 
 Regular expressions can be used, *e.g.*: `"sorted_reads/{sample,[A-Za-z0-9]+}.bam"`.
+
+# Cluster 
+
+[Newt version for genotoul](https://forgemia.inra.fr/umr-1202-biogeco/snakemake_singularity_hpc#bash)
